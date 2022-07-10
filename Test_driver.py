@@ -24,7 +24,6 @@ metric = np.inf# 1,2,np.inf
 plot = True 
 h = 6 
 w = 4 
-
 script_path = os.path.dirname(os.path.abspath(__file__))
 
 # output directory
@@ -33,58 +32,31 @@ t = time.localtime()
 timestamp = time.strftime('%b-%d-%Y_%H%M', t)  
 # create directory to store results
 today = time.strftime('%b-%d-%Y', t)
-directory = "Results_ncontrol_" + today
-output_dir12 = pathlib.Path(script_path).joinpath("outputs", directory)
+directory = "Results3_manualTaps_" + today
+output_dir = pathlib.Path(script_path).joinpath("outputs", directory)
 
-if not os.path.isdir(output_dir12):
-    os.mkdir(output_dir12)
-
-output_dir13 = pathlib.Path(output_dir12).joinpath(dispatch)
-if not os.path.isdir(output_dir13):
-    os.mkdir(output_dir13)
+if not os.path.isdir(output_dir):
+    os.mkdir(output_dir)
 else:
-    shutil.rmtree(output_dir13)
-    os.mkdir(output_dir13)
+    shutil.rmtree(output_dir)
+    os.mkdir(output_dir)
     
-batSizes = [0]
-pvSizes = [0]
-loadMults = [1] #1 for default loadshape, 11 for real.
-
 # voltage limits
 vmin = 0.95
-vmax = 1.06
+vmax = 1.05
 
-opcost = np.zeros((len(batSizes), len(pvSizes)))
-mopcost = np.zeros((len(batSizes),len(pvSizes)))
+# transformers taps [-16, 16] 
+step = 2
 
-for lm, loadMult in enumerate(loadMults): 
-    for ba, batSize in enumerate(batSizes): 
-        for pv, pvSize in enumerate(pvSizes):
+for tap1 in range(0, 9, step):
+    for tap2 in range(0,9, step):
+        for tap3 in range(0,9, step):
             
-            print(f"bat_{ba}_pv_{pv}_lm_{lm}")
-            output_dir1 = pathlib.Path(output_dir13).joinpath(f"bat_{ba}_pv_{pv}_lm_{lm}")
-            if not os.path.isdir(output_dir1):
-                os.mkdir(output_dir1)
+            print(f"T1_{tap1}_T2_{tap2}_T3_{tap3}")
+            tap_dir = pathlib.Path(output_dir).joinpath(f"T1_{tap1}_T2_{tap2}_T3_{tap3}")
+            if not os.path.isdir(tap_dir):
+                os.mkdir(tap_dir)
                 
-            ####################################
-            # First thing: compute the initial Dispatch
-            ####################################
-            demandProfile, LMP, OperationCost, mOperationCost = SLP_LP_scheduling(loadMult, batSize, pvSize, output_dir1, vmin, vmax, userDemand=None, plot=plot, freq="30min", dispatchType=dispatch)
-            opcost[ba, pv] = OperationCost
-            mopcost[ba, pv] = mOperationCost
+            # initial scheduling
+            SLP_LP_scheduling(tap1, tap2, tap3, tap_dir, vmin, vmax, userDemand=None, plot=plot, freq="30min", dispatchType=dispatch)
 
-plt.clf()
-fig, axis = plt.subplots(figsize=(h,w))
-sns.heatmap(opcost)
-plt.tight_layout()
-img_path = pathlib.Path(output_dir13).joinpath('heatmap' + ext)
-plt.savefig(img_path)
-plt.close('all')
-            
-plt.clf()
-fig, axis = plt.subplots(figsize=(h,w))
-sns.heatmap(mopcost)
-plt.tight_layout()
-img_path = pathlib.Path(output_dir13).joinpath('mheatmap' + ext)
-plt.savefig(img_path)
-plt.close('all')

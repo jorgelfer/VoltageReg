@@ -206,7 +206,7 @@ def compute_violatingVolts(v_0, v_base, vmin, vmax):
 # define the type of analysis;
 
     
-def schedulingDriver(batSize, pvSize, output_dir, iterName, freq, script_path, case, outDSS, dispatchType, vmin, vmax, PF=True, voltage=True, DR=True, plot=False):
+def schedulingDriver(output_dir, iterName, freq, script_path, case, outDSS, dispatchType, vmin, vmax, batSize=0, pvSize=0, PF=True, voltage=True, DR=True, plot=False):
     
     # define Storage and PV
     if batSize == 0:
@@ -324,12 +324,6 @@ def schedulingDriver(batSize, pvSize, output_dir, iterName, freq, script_path, c
     # extract dispatch results
     Pg, Pdr, Pij, Pchar, Pdis, E = plot_obj.extractResults(x=x, DR=DR, Storage=storage, batt=batt)
 
-    ################
-    #operation costs
-    ################
-    Pdr_1d = np.reshape(Pdr, np.size(Pdr), order="F")
-    costPdr = cdr @ Pdr_1d.T
-    
     # extract LMP results
     LMP_Pg, LMP_Pdr, LMP_Pij, LMP_Pchar, LMP_Pdis, LMP_E = plot_obj.extractLMP(LMP, DR, storage, batt)
 
@@ -373,4 +367,4 @@ def schedulingDriver(batSize, pvSize, output_dir, iterName, freq, script_path, c
         #     LMP_E = pd.DataFrame(LMP_E, PTDF.columns[Snodes], v_0.columns)
         #     plot_obj.plot_LMP(LMP_E,'E')
 
-    return outGen, outDR, outPchar, outPdis, outLMP, costPdr, cgn, m.objVal
+    return outGen, outDR, outPchar, outPdis, outLMP, m.objVal

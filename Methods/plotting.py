@@ -13,7 +13,7 @@ ext = '.png'
 
 class plottingDispatch:
 
-    def __init__(self, output_dir,  niter, PointsInTime, script_path, vmin, vmax, PTDF=None, Ain=None, title=False, dispatchType='LP'):
+    def __init__(self, output_dir,  niter, PointsInTime, script_path, vmin, vmax, PTDF=None, Ain=None, title=True, dispatchType='LP'):
         
         if Ain is not None:
             self.Ain = Ain
@@ -45,55 +45,34 @@ class plottingDispatch:
         self.output_dir = output_dir
         
     def plot_voltage(self, vBase, initVolts, indexDemand, comp=False, x=None):
-        
-        if len(vBase.shape) == 1:
-            vBase = np.kron(np.expand_dims(vBase,1), np.ones((1, self.PointsInTime)))
-        
-        if comp:
-            dvoltages = self.Ain @ x.X
-            
-            dvolts = dvoltages[:np.size(dvoltages) // 2]
-            
-            dv    = np.reshape(dvolts[:self.n*self.PointsInTime], (self.PointsInTime,self.n), order='F').T
-            
-            v = initVolts - dv
-            
-        else:
-            v = initVolts
-        
-        # compute the per unit value of the voltage
-        vpu = v[indexDemand.values] / (1000*vBase[indexDemand.values])
-        
-        # create a dataframe for limits
-        limits = np.concatenate([self.vmin*np.ones((1, self.PointsInTime)), self.vmax*np.ones((1, self.PointsInTime))], axis = 0)
-        dfLimits = pd.DataFrame(limits, index = ['lower limit', 'upper limit'], columns = vpu.columns)
-        
-        plt.clf()
-        fig, ax = plt.subplots(figsize=(h,w)) 
-        
-        # concatenate dataframes
-        concatenated = pd.concat([vpu, dfLimits])
-        concatenated.T.plot(legend=False)
-
-        if self.title:
-            ax.set_title('Volts')
-            plt.ylabel('Volts[pu]')
-            plt.xlabel('Time (hrs)')
-                
-        fig.tight_layout()
 
         # create voltage directory to store results
         output_dirV = pathlib.Path(self.output_dir).joinpath("voltage")
         if not os.path.isdir(output_dirV):
             os.mkdir(output_dirV)
 
-        output_img = pathlib.Path(self.output_dir).joinpath(f"voltage_{self.niter}_{self.timestamp}" + ext)
-        plt.savefig(output_img)
-        plt.close('all')
+        for ind in initVolts.index:
 
-        # save as pickle as well
-        output_pkl = pathlib.Path(output_dirV).joinpath(f"voltage_{self.niter}_{self.timestamp}.pkl")
-        concatenated.to_pickle(output_pkl)
+            # compute the per unit value of the voltage
+            vpu = initVolts.loc[ind,:] / (1000*vBase.loc[ind])
+        
+            # create a dataframe for limits
+            limits = np.concatenate([self.vmin*np.ones((1, self.PointsInTime)), self.vmax*np.ones((1, self.PointsInTime))], axis = 0)
+            dfLimits = pd.DataFrame(limits, index = ['lower limit', 'upper limit'], columns = initVolts.columns)
+            
+            plt.clf()
+            fig, ax = plt.subplots()#figsize=(h,w) 
+            # concatenate dataframes
+            concatenated = pd.concat([vpu.to_frame().T, dfLimits],axis=0)
+            concatenated.T.plot(ylim=(0.9*self.vmin,1.1*self.vmax), title=f'Volts in node:{ind}')
+            fig.tight_layout()
+            output_img = pathlib.Path(output_dirV).joinpath(f"voltage_{ind}" + ext) #_{self.niter}_{self.timestamp}
+            plt.savefig(output_img)
+            plt.close('all')
+
+            # save as pickle as well
+            output_pkl = pathlib.Path(output_dirV).joinpath(f"voltage_{ind}.pkl")
+            concatenated.to_pickle(output_pkl)
         
     def plot_PTDF(self):
 

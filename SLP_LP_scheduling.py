@@ -41,7 +41,7 @@ def save_ES(script_path, outGen, outDR, outPsc, outPsd):
     outES['Pdis'] = outPsd
     return outES
 
-def SLP_LP_scheduling(loadMult, batSize, pvSize, output_dir, vmin, vmax, userDemand=None, plot=False, freq="15min", dispatchType='SLP'):
+def SLP_LP_scheduling(tap1, tap2, tap3, output_dir, vmin, vmax, userDemand=None, plot=False, freq="15min", dispatchType='SLP'):
 
     # initialization
     case = '13bus' # 123bus
@@ -60,33 +60,27 @@ def SLP_LP_scheduling(loadMult, batSize, pvSize, output_dir, vmin, vmax, userDem
         computeSensitivity(script_path, case, dss, dss_file, plot)
     
     # get init load
-    loadNames, dfDemand, dfDemandQ = getInitDemand(script_path, dss, freq, loadMult)
+    loadNames, dfDemand, dfDemandQ = getInitDemand(script_path, dss, freq)
     
     # correct native load by user demand
     if userDemand is not None:
         dfDemand.loc[loadNames.index,:] = userDemand
         
     #Dss driver function
-    Pg_0, v_0, Pjk_0, v_base, Pjk_lim = dssDriver(output_dir, 'InitDSS', script_path, case, dss, dss_file, loadNames, dfDemand, dfDemandQ, dispatchType, vmin, vmax, plot=plot)
+    Pg_0, v_0, Pjk_0, v_base, Pjk_lim = dssDriver(tap1, tap2, tap3, output_dir, 'InitDSS', script_path, case, dss, dss_file, loadNames, dfDemand, dfDemandQ, dispatchType, vmin, vmax, plot=plot)
     outDSS = save_initDSS(script_path, Pg_0, v_0, Pjk_0, v_base, Pjk_lim, loadNames, dfDemand, dfDemandQ)
     
-    #Energy scheduling driver function   
-    outGen, outDR, outPchar, outPdis, outLMP, costPdr, cgn, mobj = schedulingDriver(batSize, pvSize, output_dir, 'Dispatch', freq, script_path, case, outDSS, dispatchType, vmin, vmax, plot=plot)
-    outES = save_ES(script_path, outGen, outDR, outPchar, outPdis)
-    
-    # normalization 
-    loadNames = outDSS['loadNames']
-    dfDemand = outDSS['initDemand']
-    
-    #corrected dss driver function
-    Pg, v, Pjk, v_base, Pjk_lim = dssDriver(output_dir, 'FinalDSS', script_path, case, dss, dss_file, loadNames, dfDemand, dfDemandQ, dispatchType, vmin, vmax, out=outES, plot=plot)
+    ##Energy scheduling driver function   
+    #outGen, outDR, outPchar, outPdis, outLMP, mobj = schedulingDriver(output_dir, 'Dispatch', freq, script_path, case, outDSS, dispatchType, vmin, vmax, plot=plot)
+    #outES = save_ES(script_path, outGen, outDR, outPchar, outPdis)
+    #
+    ## normalization 
+    #loadNames = outDSS['loadNames']
+    #dfDemand = outDSS['initDemand']
+    #
+    ##corrected dss driver function
+    #Pg, v, Pjk, v_base, Pjk_lim = dssDriver(output_dir, 'FinalDSS', script_path, case, dss, dss_file, loadNames, dfDemand, dfDemandQ, dispatchType, vmin, vmax, out=outES, plot=plot)
 
-    # initial power 
-    Pg = np.reshape(Pg.values.T, np.size(Pg), order="F")
-    costPg = cgn @ Pg
-
-    operationCost = costPdr[0] + costPg[0]
-        
-    return dfDemand.loc[loadNames.index,:], outLMP, operationCost, mobj
+    #return dfDemand.loc[loadNames.index,:], outLMP, mobj
         
         

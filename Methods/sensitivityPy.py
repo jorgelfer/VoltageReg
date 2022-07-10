@@ -22,6 +22,28 @@ class sensitivityPy:
         else:
             self.__edit_1ph_gen(genName, node, kw=0, kvar=kw)
 
+    def setTaps(self, tap1, tap2, tap3):
+        
+        trafos = self.dss.transformers_all_Names()
+        for trafo in trafos:
+            if "reg" in trafo:
+                # set the trafo as the active element
+                self.dss.transformers_write_name(trafo)
+                # set the second winding active
+                self.dss.transformers_write_wdg(2) 
+                # debug 
+                readprevtap = self.dss.transformers_read_tap()
+                if "reg1" in trafo:
+                    newtap = 1.0 + tap1*0.00625
+                    self.dss.text(f"Transformer.Reg1.Taps=[1.0, {newtap}]")
+                elif "reg2" in trafo:
+                    newtap = 1.0 + tap2*0.00625
+                    self.dss.text(f"Transformer.Reg2.Taps=[1.0, {newtap}]")
+                else:
+                    newtap = 1.0 + tap3*0.00625
+                    self.dss.text(f"Transformer.Reg3.Taps=[1.0, {newtap}]")
+                readnewtap = self.dss.transformers_read_tap()
+                
     def setLoads(self, loadP, loadQ, loadNames):
         
         # rename nodes to explicit load names
@@ -234,7 +256,6 @@ class sensitivityPy:
                     self.__modifyLoad(newKw, kvar,  loadName)
                     
 
-                    
     def __setAllLoads(self, instDemandP, instDemandQ):
         "Method to modify loads from a DSS file according to dispatch"
         

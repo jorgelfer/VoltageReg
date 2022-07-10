@@ -77,7 +77,7 @@ def load_GenerationMix(script_path, freq):
     return genAlpha, genBeta
 
 
-def getInitDemand(scriptPath, dss, freq, loadMult):
+def getInitDemand(scriptPath, dss, freq, loadMult=1):
 
     # get all node-based buses, 
     nodeNames = dss.circuit_all_node_names()

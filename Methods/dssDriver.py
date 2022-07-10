@@ -19,7 +19,7 @@ from Methods.reactiveCorrection import reactiveCorrection
 def set_baseline(dss):
     
     dss.text("Set Maxiterations=100")
-    dss.text("Set controlmode=Off") # this is for not using the default regulator
+    dss.text("Set controlmode=OFF") # this is for not using the default regulator
 
 def load_lineLimits(script_path, case):
     # Line Info
@@ -59,10 +59,11 @@ def get_nodePowers(dss, nodeNames):
     return Pa, Qa
 
 #driver function:
-def dssDriver(output_dir, iterName, scriptPath, case, dss, dssFile, loadNames, dfDemand, dfDemandQ, dispatchType, vmin, vmax, out=None, plot=True):
+def dssDriver(tap1, tap2, tap3, output_dir, iterName, scriptPath, case, dss, dssFile, loadNames, dfDemand, dfDemandQ, dispatchType, vmin, vmax, out=None, plot=True):
 
     dss.text(f"Compile [{dssFile}]") 
     set_baseline(dss)
+    dss.text("solve")
 
     # create a sensitivity object
     sen_obj_0 = sensitivityPy(dss, time=0)
@@ -98,7 +99,6 @@ def dssDriver(output_dir, iterName, scriptPath, case, dss, dssFile, loadNames, d
     for t, time in enumerate(dfDemand.columns):
         # fresh compilation to remove previous modifications
         dss.text(f"Compile [{dssFile}]") 
-        set_baseline(dss)
         
         #create a sensitivity object
         sen_obj = sensitivityPy(dss, time=time)
@@ -108,7 +108,9 @@ def dssDriver(output_dir, iterName, scriptPath, case, dss, dssFile, loadNames, d
         
         if out is not None:
             sen_obj.modifyDSS(out, nodeBaseVoltage)
-        
+           
+        sen_obj.setTaps(tap1, tap2, tap3)
+        set_baseline(dss)
         dss.text("solve")
         
         # extract power
@@ -155,5 +157,3 @@ def dssDriver(output_dir, iterName, scriptPath, case, dss, dssFile, loadNames, d
         plot_obj.plot_voltage(nodeBaseVoltage, dfV, dfDemand.any(axis=1))
 
     return dfP, dfV, dfPjks, nodeBaseVoltage, dfPjk_lim
-
-
