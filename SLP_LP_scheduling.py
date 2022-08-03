@@ -9,37 +9,11 @@ import pathlib
 import os
 
 import py_dss_interface
-import numpy as np
 from Methods.dssDriver import dssDriver
-from Methods.schedulingDriver import schedulingDriver
-from Methods.initDemandProfile import getInitDemand 
-from Methods.computeSensitivity import computeSensitivity
-
 #required for plotting
 import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 20})
 
-def save_initDSS(script_path, Pg_0, v_0, Pjk_0, v_base, Pjk_lim, loadNames, initDemand, initDemandQ):
-    # save initial DSS values
-    outDSS = dict()
-    outDSS['initPower'] = Pg_0
-    outDSS['initVolts'] = v_0
-    outDSS['initPjks'] = Pjk_0
-    outDSS['limPjks'] = Pjk_lim 
-    outDSS['nodeBaseVolts'] = v_base 
-    outDSS['loadNames'] = loadNames
-    outDSS['initDemand'] = initDemand
-    outDSS['initDemandQ'] = initDemandQ
-    return outDSS
-
-def save_ES(script_path, outGen, outDR, outPsc, outPsd):
-    # save optimization values
-    outES = dict()
-    outES['Gen'] = outGen
-    outES['DR'] = outDR
-    outES['Pchar'] = outPsc
-    outES['Pdis'] = outPsd
-    return outES
 
 def SLP_LP_scheduling(tap1, tap2, tap3, output_dir, vmin, vmax, userDemand=None, plot=False, freq="15min", dispatchType='SLP'):
 
@@ -69,18 +43,5 @@ def SLP_LP_scheduling(tap1, tap2, tap3, output_dir, vmin, vmax, userDemand=None,
     #Dss driver function
     Pg_0, v_0, Pjk_0, v_base, Pjk_lim = dssDriver(tap1, tap2, tap3, output_dir, 'InitDSS', script_path, case, dss, dss_file, loadNames, dfDemand, dfDemandQ, dispatchType, vmin, vmax, plot=plot)
     outDSS = save_initDSS(script_path, Pg_0, v_0, Pjk_0, v_base, Pjk_lim, loadNames, dfDemand, dfDemandQ)
-    
-    ##Energy scheduling driver function   
-    #outGen, outDR, outPchar, outPdis, outLMP, mobj = schedulingDriver(output_dir, 'Dispatch', freq, script_path, case, outDSS, dispatchType, vmin, vmax, plot=plot)
-    #outES = save_ES(script_path, outGen, outDR, outPchar, outPdis)
-    #
-    ## normalization 
-    #loadNames = outDSS['loadNames']
-    #dfDemand = outDSS['initDemand']
-    #
-    ##corrected dss driver function
-    #Pg, v, Pjk, v_base, Pjk_lim = dssDriver(output_dir, 'FinalDSS', script_path, case, dss, dss_file, loadNames, dfDemand, dfDemandQ, dispatchType, vmin, vmax, out=outES, plot=plot)
 
-    #return dfDemand.loc[loadNames.index,:], outLMP, mobj
-        
-        
+
